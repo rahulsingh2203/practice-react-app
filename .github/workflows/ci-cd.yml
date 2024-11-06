@@ -1,13 +1,11 @@
 name: ultimate CI-CD Pipeline by Rahul Singh
 
 on:
-  push:
-    branches:
-      - main
-      - workflow_dispatch
+  - push
+  - workflow_dispatch
 
 jobs:
-  Build & Test:
+  Build_and_Test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout git repository
@@ -18,7 +16,7 @@ jobs:
 
       - name: Install node dependencies, run test and build application
         run: |
-          npm Install
+          npm install
           echo "npm installed successfully"
           npm test
           echo "test executed successfully"
@@ -29,31 +27,28 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: react-app-build
-          path: ./build
+          path: ./build/
 
   Deploy:
     runs-on: ubuntu-latest
-    needs: Build & Test
+    needs: Build_and_Test
     steps:
       - name: Checkout git repository
         uses: actions/checkout@v4
 
       - name: Setup SSH Key in runner (temporary ubuntu server)
-      - run: |
+        run: |
           mkdir -p ~/.ssh
-          echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: react-app-build
-          path: ./build
+          path: ./build/
 
       - name: Deploy to EC2 Ubuntu Server
         run: |
-          scp -r ./build/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/my-simple-app/frontend/html
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            sudo systemctl restart apache2
-          EOF
+          scp -i private_key.pem -r -o StrictHostKeyChecking=no ./build/* ubuntu@${{ secrets.EC2_HOST }}:/var/www/my-simple-app/frontend/html
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "sudo systemctl reload apache2"
