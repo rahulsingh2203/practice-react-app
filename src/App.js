@@ -6,7 +6,7 @@ import Message from './message';
 function App() {
   return (
     <div className="App">
-      <h1>My Simple React App</h1>
+      <h1>My Simple React App </h1>
       <Message />
     </div>
   );
