@@ -50,5 +50,5 @@ jobs:
 
       - name: Deploy to EC2 Ubuntu Server
         run: |
-          scp -i private_key.pem -r -o StrictHostKeyChecking=no * ubuntu@${{ secrets.EC2_HOST }}:/var/www/my-simple-app/frontend/html
+          scp -i private_key.pem -r -o StrictHostKeyChecking=no ./build/* ubuntu@${{ secrets.EC2_HOST }}:/var/www/my-simple-app/frontend/html
           ssh -i private_key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} "sudo systemctl reload apache2"
