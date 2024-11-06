@@ -1,0 +1,59 @@
+name: ultimate CI-CD Pipeline by Rahul Singh
+
+on:
+  push:
+    branches:
+      - main
+      - workflow_dispatch
+
+jobs:
+  Build & Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v4
+
+      - name: Setup node environment
+        uses: actions/setup-node@v4
+
+      - name: Install node dependencies, run test and build application
+        run: |
+          npm Install
+          echo "npm installed successfully"
+          npm test
+          echo "test executed successfully"
+          npm run build
+          echo "application build successfully"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-app-build
+          path: ./build
+
+  Deploy:
+    runs-on: ubuntu-latest
+    needs: Build & Test
+    steps:
+      - name: Checkout git repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key in runner (temporary ubuntu server)
+      - run: |
+          mkdir -p ~/.ssh
+          echo "${{secrets.SSH_PRIVATE_KEY}}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: react-app-build
+          path: ./build
+
+      - name: Deploy to EC2 Ubuntu Server
+        run: |
+          scp -r ./build/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/my-simple-app/frontend/html
+          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            sudo systemctl restart apache2
+          EOF
