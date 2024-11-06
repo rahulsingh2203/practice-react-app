@@ -1,10 +1,8 @@
 name: ultimate CI-CD Pipeline by Rahul Singh
 
 on:
-  push:
-    branches:
-      - main
-      - workflow_dispatch
+  - push
+  - workflow_dispatch
 
 jobs:
   Build & Test:
